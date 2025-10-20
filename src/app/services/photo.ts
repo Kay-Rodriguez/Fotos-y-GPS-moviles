@@ -2,10 +2,12 @@ import { Injectable } from '@angular/core';
 import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
+import { Geolocation } from "@capacitor/geolocation";
 
 export interface UserPhoto {
   filepath: string;
   webviewPath?: string;
+  mapsLink?: string;
 }
 
 @Injectable({
@@ -24,7 +26,21 @@ export class PhotoService {
       quality: 100,
     });
 
+    const position = await Geolocation.getCurrentPosition();
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+
     const savedImageFile = await this.savePicture(capturedPhoto);
+    savedImageFile.mapsLink = mapsLink;
+
+    const log = `Foto tomada\nLatitud: ${lat}\nLongitud: ${lon}\nLink: ${mapsLink}\n`;
+      await Filesystem.writeFile({
+        path: `foto_ubicacion_${new Date().getTime()}.txt`,
+        data: log,
+        directory: Directory.Documents,
+      });
+
     this.photos.unshift(savedImageFile);
 
     Preferences.set({
