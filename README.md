@@ -57,4 +57,5 @@ Esta aplicación móvil permite tomar fotos desde el dispositivo, obtener la ubi
 
 - APK
 <img width="761" height="288" alt="image" src="https://github.com/user-attachments/assets/87269832-65fb-4322-8faf-0445b65d80e5" />
+
 <img width="1232" height="711" alt="image" src="https://github.com/user-attachments/assets/ebdf40b9-c82d-442d-9f56-34bdab2a092d" />
