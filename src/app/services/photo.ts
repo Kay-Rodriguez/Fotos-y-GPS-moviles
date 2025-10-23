@@ -1,93 +1,139 @@
 import { Injectable } from '@angular/core';
-import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
+import { Camera, CameraPhoto, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
-import { Geolocation } from "@capacitor/geolocation";
-
-export interface UserPhoto {
-  filepath: string;
-  webviewPath?: string;
-  mapsLink?: string;
-}
+import { LocationService } from './location';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class PhotoService {
+
   public photos: UserPhoto[] = [];
   private PHOTO_STORAGE: string = 'photos';
 
-  constructor() {}
+  constructor(private locationService: LocationService) { }
 
-  public async addPhotoToGallery() {
+  // Toma una nueva foto y la guarda con la ubicación actual
+  public async addNewToGallery() {
+    // Tomar foto desde la cámara
     const capturedPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
-      quality: 100,
+      quality: 100
     });
 
-    const position = await Geolocation.getCurrentPosition();
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    // Obtener ubicación actual usando LocationService
+    let lat: number | undefined;
+    let lng: number | undefined;
+    try {
+      await this.locationService.ensurePermissions();
+      const position = await this.locationService.getCurrentPosition();
+      lat = position.coords.latitude;
+      lng = position.coords.longitude;
+    } catch (e) {
+      console.warn('No se pudo obtener la ubicación', e);
+    }
 
+    // Guardar en filesystem
     const savedImageFile = await this.savePicture(capturedPhoto);
-    savedImageFile.mapsLink = mapsLink;
 
-    const log = `Foto tomada\nLatitud: ${lat}\nLongitud: ${lon}\nLink: ${mapsLink}\n`;
-      await Filesystem.writeFile({
-        path: `foto_ubicacion_${new Date().getTime()}.txt`,
-        data: log,
-        directory: Directory.Documents,
-      });
+    // Agregar lat/lng a la foto
+    const photoWithLocation: UserPhoto = {
+      ...savedImageFile,
+      lat,
+      lng
+    };
 
-    this.photos.unshift(savedImageFile);
+    // Agregar al inicio cada foto nueva
+    this.photos.unshift(photoWithLocation);
 
-    Preferences.set({
+    // Guardar el arreglo completo en Preferences
+    await Preferences.set({
       key: this.PHOTO_STORAGE,
-      value: JSON.stringify(this.photos),
+      value: JSON.stringify(this.photos)
     });
+
+    // Guardar ubicación en txt
+    if (lat !== undefined && lng !== undefined) {
+      await Filesystem.appendFile({
+        path: 'ubicaciones.txt',
+        data: `${lat},${lng}\n`,
+        directory: Directory.Data
+      });
+    }
+
+    console.log('Foto capturada y guardada:', photoWithLocation);
+    return photoWithLocation;
   }
 
-  private async savePicture(photo: Photo): Promise<UserPhoto> {
-    const response = await fetch(photo.webPath!);
-    const blob = await response.blob();
-    const base64Data = await this.convertBlobToBase64(blob) as string;
+  // Cargar las fotos guardadas desde Preferences y Filesystem
+  public async loadSaved() {
+    const { value } = await Preferences.get({ key: this.PHOTO_STORAGE });
+    this.photos = (value ? JSON.parse(value) : []) as UserPhoto[];
 
-    const fileName = new Date().getTime() + '.jpeg';
+    // Leer cada foto desde el filesystem y reconstruir la ruta
+    for (let photo of this.photos) {
+      try {
+        const file = await Filesystem.readFile({
+          path: photo.filepath,
+          directory: Directory.Data
+        });
+        photo.webviewPath = `data:image/jpeg;base64,${file.data}`;
+      } catch (e) {
+        // Si no se puede leer, mantener la webviewPath original
+      }
+    }
+
+    console.log('Fotos cargadas desde almacenamiento:', this.photos);
+  }
+
+  // Guardar cada foto en el filesystem
+  private async savePicture(photo: CameraPhoto) {
+    const base64Data = await this.readAsBase64(photo);
+
+    const fileName = Date.now() + '.jpeg';
     await Filesystem.writeFile({
       path: fileName,
       data: base64Data,
-      directory: Directory.Data,
+      directory: Directory.Data
     });
 
     return {
       filepath: fileName,
-      webviewPath: photo.webPath,
+      webviewPath: photo.webPath
     };
   }
 
-  private convertBlobToBase64 = (blob: Blob) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(blob);
-    });
+  // Convertir las fotos a base64
+  private async readAsBase64(photo: CameraPhoto) {
+    const response = await fetch(photo.webPath!);
+    const blob = await response.blob();
 
-  public async loadSaved() {
-    const { value } = await Preferences.get({ key: this.PHOTO_STORAGE });
-    this.photos = value ? JSON.parse(value) : [];
-
-    for (let photo of this.photos) {
-      const readFile = await Filesystem.readFile({
-        path: photo.filepath,
-        directory: Directory.Data,
-      });
-
-      photo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
-    }
+    return await this.convertBlobToBase64(blob) as string;
   }
+
+  // Convertir un Blob a base64
+  private convertBlobToBase64 = (blob: Blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+export interface UserPhoto {
+  filepath: string;
+  webviewPath?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface Photo {
+  filepath: string;
+  webviewPath: string;
+  lat?: number;
+  lng?: number;
 }

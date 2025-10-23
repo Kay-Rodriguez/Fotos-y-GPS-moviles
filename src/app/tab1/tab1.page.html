@@ -1,17 +1,88 @@
+<!-- ...existing code... -->
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
+    <ion-title> Ubicación </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="tab1-content">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
+      <ion-title size="large">Ubicación</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+  <div class="page-inner">
+    <div id="map"#mapElement class="map-placeholder" role="region" aria-label="Mapa de ubicación">
+      <ion-icon name="map-outline" class="map-icon"></ion-icon>
+      <p class="map-text">Mapa (vista previa)</p>
+    </div>
+
+    <ion-card *ngIf="location" class="location-card">
+      <ion-card-header>
+        <ion-card-title>Tu ubicación actual</ion-card-title>
+        <ion-card-subtitle *ngIf="location.timestamp">Actualizado: {{ location.timestamp | date:'short' }}</ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="12" size-md="6">
+              <ion-item lines="none">
+                <ion-label>
+                  <h3>Latitud</h3>
+                  <p class="muted">{{ location.latitude }}</p>
+                </ion-label>
+              </ion-item>
+            </ion-col>
+            <ion-col size="12" size-md="6">
+              <ion-item lines="none">
+                <ion-label>
+                  <h3>Longitud</h3>
+                  <p class="muted">{{ location.longitude }}</p>
+                </ion-label>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+
+          <ion-row>
+            <ion-col>
+              <ion-item lines="none" *ngIf="location.accuracy">
+                <ion-label>
+                  <h3>Precisión</h3>
+                  <p class="muted">{{ location.accuracy }} m</p>
+                </ion-label>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <div class="actions">
+          <ion-button fill="outline" size="small" (click)="copyLocation()" aria-label="Copiar ubicación">
+            <ion-icon slot="start" name="copy-outline"></ion-icon> Copiar
+          </ion-button>
+
+          <ion-button fill="outline" size="small" (click)="shareLocation()" aria-label="Compartir ubicación">
+            <ion-icon slot="start" name="share-social-outline"></ion-icon>
+            Compartir
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="!location" class="empty-card">
+      <ion-card-content>
+        <p>No se ha obtenido la ubicación aún. Presiona el botón para obtenerla.</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- <app-explore-container name="ver ubicacion"></app-explore-container>  <-- eliminado -->
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="primary" (click)="getCurrentLocation()" aria-label="Obtener ubicación">
+      <ion-icon name="locate-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>
+<!-- ...existing code... -->

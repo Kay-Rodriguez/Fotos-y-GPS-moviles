@@ -1,25 +1,22 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
-import { FormsModule } from '@angular/forms';
-import { ExploreContainerComponentModule } from '../explore-container/explore-container.module';
 import { PhotoService } from '../services/photo';
 
 @Component({
-  standalone: true,
   selector: 'app-tab2',
   templateUrl: 'tab2.page.html',
   styleUrls: ['tab2.page.scss'],
-  imports: [CommonModule, FormsModule, IonicModule, ExploreContainerComponentModule]
+  standalone: false,
 })
 export class Tab2Page {
-  constructor(public photoService: PhotoService) {}
 
-  async ngOnInit() {
+  constructor(public photoService: PhotoService) { }
+
+  //Se ejecuta cada vez que regreso a la pestaña para mostrar las fotos guardadas
+  async ionViewWillEnter() {
     await this.photoService.loadSaved();
   }
 
   addPhotoToGallery() {
-    this.photoService.addPhotoToGallery();
+    this.photoService.addNewToGallery();
   }
 }
