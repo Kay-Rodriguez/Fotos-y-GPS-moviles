@@ -14,6 +14,8 @@ galeria de fotos
 <img width="1363" height="579" alt="image" src="https://github.com/user-attachments/assets/49b49ef4-eaf3-4b49-9831-cdf7c94488ca" />
 
 crear txt 
+<img width="1333" height="119" alt="image" src="https://github.com/user-attachments/assets/c0f4c442-ca55-4ff3-8d8c-78bbdcf62b01" />
+
 <img width="1365" height="595" alt="image" src="https://github.com/user-attachments/assets/0115897c-28c1-4a82-926f-6b31b98dab12" />
 
 <img width="1283" height="590" alt="image" src="https://github.com/user-attachments/assets/4add85c3-59d2-4920-997f-a9faeccb9480" />
